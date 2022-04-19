@@ -1001,7 +1001,7 @@ class ProxyRepoProvider(RepoProvider):
     def __new__(cls, *args, **kwargs):
         import requests
         spec = kwargs["spec"]
-        project_url = f"http://10.105.23.225:8000/api/projects/{spec}"
+        project_url = f"http://10.110.134.221:8000/api/projects/{spec}"
         project_metadata = requests.get(project_url).json()
         provider = project_metadata["provider"]
         spec = project_metadata["home_url"]
