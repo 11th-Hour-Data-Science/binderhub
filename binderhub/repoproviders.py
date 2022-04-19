@@ -999,5 +999,6 @@ class GistRepoProvider(GitHubRepoProvider):
 class ProxyRepoProvider(RepoProvider):
 
     def __new__(cls, *args, **kwargs):
-        print(*args, **kwargs)
+        print(f' Args: {args}' )
+        print(f' Kwargs: {kwargs}' )
         return GitHubRepoProvider(*args, **kwargs)
