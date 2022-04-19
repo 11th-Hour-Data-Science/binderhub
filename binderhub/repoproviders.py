@@ -995,3 +995,9 @@ class GistRepoProvider(GitHubRepoProvider):
 
     def get_build_slug(self):
         return self.gist_id
+
+class ProxyRepoProvider(RepoProvider):
+
+    def __new__(cls, *args, **kwargs):
+        print(*args, **kwargs)
+        return GitHubRepoProvider(*args, **kwargs)
