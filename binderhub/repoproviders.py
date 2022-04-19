@@ -999,6 +999,23 @@ class GistRepoProvider(GitHubRepoProvider):
 class ProxyRepoProvider(RepoProvider):
 
     def __new__(cls, *args, **kwargs):
-        print(f' Args: {args}' )
-        print(f' Kwargs: {kwargs}' )
-        return GitHubRepoProvider(*args, **kwargs)
+        import requests
+        spec = kwargs["spec"]
+        project_url = f"http://10.105.23.225:8000/api/projects/{spec}"
+        project_metadata = requests.get(project_url).json()
+        provider = project_metadata["provider"]
+        spec = project_metadata["home_url"]
+        kwargs["spec"] = spec
+
+        providers = {
+            'gh': GitHubRepoProvider,
+            'gist': GistRepoProvider,
+            'git': GitRepoProvider,
+            'gl': GitLabRepoProvider,
+            'zenodo': ZenodoProvider,
+            'figshare': FigshareProvider,
+            'hydroshare': HydroshareProvider,
+            'dataverse': DataverseProvider,
+        }
+
+        return providers[provider](*args, **kwargs)
