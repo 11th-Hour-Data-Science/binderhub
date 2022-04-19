@@ -759,6 +759,8 @@ class GitHubRepoProvider(RepoProvider):
     }
 
     def __init__(self, *args, **kwargs):
+        print(f' Args: {args}' )
+        print(f' Kwargs: {kwargs}' )
         super().__init__(*args, **kwargs)
         self.user, self.repo, self.unresolved_ref = tokenize_spec(self.spec)
         self.repo = strip_suffix(self.repo, ".git")
