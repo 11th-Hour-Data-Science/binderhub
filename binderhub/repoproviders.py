@@ -1021,14 +1021,17 @@ class ProxyRepoProvider(RepoProvider):
 
     def __new__(cls, *args, **kwargs):
         import requests
+        import traitlets.log
+        log = traitlets.log.get_logger()
         spec = kwargs["spec"]
         project_url = f"{cls.api_url}/{spec}"
-        cls.log.debug(f"Fetching {project_url}")
+        log.debug(f"Fetching {project_url}")
         project_metadata = requests.get(project_url).json()
         provider = project_metadata["provider"]
-        spec = project_metadata["home_url"] + "/HEAD"
+        spec = project_metadata["home_url"]
+        log.debug(f"Using {provider} provider with spec {spec}")
         kwargs["spec"] = spec
-
+        log.debug(f"Sending kwargs {kwargs}")
         providers = {
             'gh': GitHubRepoProvider,
             'gist': GistRepoProvider,
