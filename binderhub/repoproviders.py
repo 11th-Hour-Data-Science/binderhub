@@ -1023,13 +1023,13 @@ class ProxyRepoProvider(RepoProvider):
         self.provider, kwargs = self.resolve_provider(kwargs)
         import inspect
         for name, value in inspect.getmembers(self.provider(*args, **kwargs)):
-            print(name, value)
             if not hasattr(self, name):
                 setattr(self, name, value)
 
     def resolve_provider(self, kwargs):
         import requests
         spec = kwargs["spec"]
+        self.log.debug(f"Using {self.api_url} with name {self.name}")
         project_url = f"{self.api_url}/{spec}"
         self.log.debug(f"Fetching {project_url}")
         project_metadata = requests.get(project_url).json()
