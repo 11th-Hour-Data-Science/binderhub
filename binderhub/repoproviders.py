@@ -995,3 +995,60 @@ class GistRepoProvider(GitHubRepoProvider):
 
     def get_build_slug(self):
         return self.gist_id
+
+class ProxyRepoProvider(RepoProvider):
+
+    name = Unicode("Proxy")
+
+    display_name = "Proxy"
+
+    api_url = Unicode(
+        config=True,
+        help="""The GitHub hostname to use
+
+        Requests to api/spec should return a json with a spec
+        field and a provider field that maps to one of the predefined
+        repoproviders.
+        """
+    )
+
+    labels = {
+        "text": "URL to API endpoint returning project's spec and provider",
+        "tag_text": "Git ref (branch, tag, or commit)",
+        "ref_prop_disabled": True,
+        "label_prop_disabled": True,
+    }
+
+
+    def __init__(self, *args, **kwargs):
+        self.provider, kwargs = self.resolve_provider(kwargs)
+        super(self.provider).__init__(*args, **kwargs)
+
+
+
+    def resolve_provider(self, kwargs):
+        import requests
+        spec = kwargs["spec"]
+        project_url = f"{self.api_url}/{spec}"
+        self.log.debug(f"Fetching {project_url}")
+        project_metadata = requests.get(project_url).json()
+        provider = project_metadata["provider"]
+        spec = project_metadata["home_url"]
+        self.log.debug(f"Using {provider} provider with spec {spec}")
+        kwargs["spec"] = spec
+        self.log.debug(f"Sending kwargs {kwargs}")
+        providers = {
+            'gh': GitHubRepoProvider,
+            'gist': GistRepoProvider,
+            'git': GitRepoProvider,
+            'gl': GitLabRepoProvider,
+            'zenodo': ZenodoProvider,
+            'figshare': FigshareProvider,
+            'hydroshare': HydroshareProvider,
+            'dataverse': DataverseProvider,
+        }
+        return providers[provider], kwargs
+
+    def __getattribute__(self, name):
+        provider = super().__getattribute__('provider')
+        return getattr(provider, name)
