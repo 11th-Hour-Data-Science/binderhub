@@ -759,10 +759,9 @@ class GitHubRepoProvider(RepoProvider):
     }
 
     def __init__(self, *args, **kwargs):
-        print(f' Args: {args}' )
-        print(f' Kwargs: {kwargs}' )
         super().__init__(*args, **kwargs)
         self.user, self.repo, self.unresolved_ref = tokenize_spec(self.spec)
+        print(f' Kwargs: {kwargs}, {self.unresolved_ref}' )
         self.repo = strip_suffix(self.repo, ".git")
 
     def get_repo_url(self):
@@ -774,6 +773,7 @@ class GitHubRepoProvider(RepoProvider):
         return f"https://{self.hostname}/{self.user}/{self.repo}/tree/{self.resolved_ref}"
 
     async def github_api_request(self, api_url, etag=None):
+        print("API URL:", api_url)
         client = AsyncHTTPClient()
 
         request_kwargs = {}
@@ -885,6 +885,7 @@ class GitHubRepoProvider(RepoProvider):
             self.log.debug("Cache outdated for %s", api_url)
 
         ref_info = json.loads(resp.body.decode('utf-8'))
+        print(f"ref info {ref_info}, {resp.read()}")
         if 'sha' not in ref_info:
             # TODO: Figure out if we should raise an exception instead?
             self.log.warning("No sha for %s in %s", api_url, ref_info)
@@ -999,6 +1000,10 @@ class GistRepoProvider(GitHubRepoProvider):
         return self.gist_id
 
 class ProxyRepoProvider(RepoProvider):
+
+    name = Unicode("Proxy")
+
+    display_name = "Proxy"
 
     def __new__(cls, *args, **kwargs):
         import requests
