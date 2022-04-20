@@ -1019,12 +1019,13 @@ class ProxyRepoProvider(RepoProvider):
         "label_prop_disabled": True,
     }
 
-
     def __init__(self, *args, **kwargs):
         self.provider, kwargs = self.resolve_provider(kwargs)
-        super(self.provider).__init__(*args, **kwargs)
-
-
+        import inspect
+        for name, value in inspect.getmembers(self.provider(*args, **kwargs)):
+            print(name, value)
+            if not hasattr(self, name):
+                setattr(self, name, value)
 
     def resolve_provider(self, kwargs):
         import requests
@@ -1048,7 +1049,3 @@ class ProxyRepoProvider(RepoProvider):
             'dataverse': DataverseProvider,
         }
         return providers[provider], kwargs
-
-    def __getattribute__(self, name):
-        provider = super().__getattribute__('provider')
-        return getattr(provider, name)
