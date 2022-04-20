@@ -1002,10 +1002,28 @@ class ProxyRepoProvider(RepoProvider):
 
     display_name = "Proxy"
 
+    api_url = Unicode(
+        config=True,
+        help="""The GitHub hostname to use
+
+        Requests to api/spec should return a json with a spec
+        field and a provider field that maps to one of the predefined
+        repoproviders.
+        """
+    )
+
+    labels = {
+        "text": "URL to API endpoint returning project's spec and provider",
+        "tag_text": "Git ref (branch, tag, or commit)",
+        "ref_prop_disabled": True,
+        "label_prop_disabled": True,
+    }
+
     def __new__(cls, *args, **kwargs):
         import requests
         spec = kwargs["spec"]
-        project_url = f"http://10.108.135.226:8000/api/projects/{spec}"
+        project_url = f"{cls.api_url}/{spec}"
+        cls.log.debug(f"Fetching {project_url}")
         project_metadata = requests.get(project_url).json()
         provider = project_metadata["provider"]
         spec = project_metadata["home_url"] + "/HEAD"
