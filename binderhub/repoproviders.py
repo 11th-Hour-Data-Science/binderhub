@@ -762,6 +762,7 @@ class GitHubRepoProvider(RepoProvider):
         super().__init__(*args, **kwargs)
         self.user, self.repo, self.unresolved_ref = tokenize_spec(self.spec)
         self.repo = strip_suffix(self.repo, ".git")
+        self.log.debug(f"access token is {self.access_token}")
 
     def get_repo_url(self):
         return f"https://{self.hostname}/{self.user}/{self.repo}"
