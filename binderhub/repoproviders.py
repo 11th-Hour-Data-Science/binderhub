@@ -8,6 +8,7 @@ control services and providers.
           repo providers in event-schemas/launch.json.
 """
 from datetime import timedelta, datetime, timezone
+from distutils.command.config import config
 import json
 import os
 import time
@@ -713,6 +714,7 @@ class GitHubRepoProvider(RepoProvider):
         Loaded from GITHUB_CLIENT_ID env by default.
         """
     )
+
     @default('client_id')
     def _client_id_default(self):
         return os.getenv('GITHUB_CLIENT_ID', '')
@@ -762,7 +764,6 @@ class GitHubRepoProvider(RepoProvider):
         super().__init__(*args, **kwargs)
         self.user, self.repo, self.unresolved_ref = tokenize_spec(self.spec)
         self.repo = strip_suffix(self.repo, ".git")
-        self.log.debug(f"access token is {self.access_token}")
 
     def get_repo_url(self):
         return f"https://{self.hostname}/{self.user}/{self.repo}"
@@ -1021,24 +1022,34 @@ class ProxyRepoProvider(RepoProvider):
     }
 
     def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.provider, kwargs = self.resolve_provider(kwargs)
         import inspect
         for name, value in inspect.getmembers(self.provider(*args, **kwargs)):
-            if not hasattr(self, name):
+            if name in ["__dict__", "labels"]:
+                continue
+            try:
                 setattr(self, name, value)
+            except Exception as e:
+                self.log.debug(f"Error copying {e}")
+        self.log.debug(f"Copied attributes from {self.provider} instance")
 
     def resolve_provider(self, kwargs):
         import requests
         spec = kwargs["spec"]
-        self.log.debug(f"Using {self.api_url} with name {self.name}")
+        # remove auto generated commit
+        spec = spec.split("/")[0]
         project_url = f"{self.api_url}/{spec}"
         self.log.debug(f"Fetching {project_url}")
+        self.log.debug(f"{self.labels}")
         project_metadata = requests.get(project_url).json()
-        provider = project_metadata["provider"]
-        spec = project_metadata["home_url"]
-        self.log.debug(f"Using {provider} provider with spec {spec}")
-        kwargs["spec"] = spec
-        self.log.debug(f"Sending kwargs {kwargs}")
+        try:
+            provider = project_metadata["provider"]
+            spec = project_metadata["home_url"]
+        except AttributeError as e:
+            msg = f"""API endpoint {project_url} must return json with
+                      'provider' and 'spec' attributes"""
+            raise ValueError(msg)
         providers = {
             'gh': GitHubRepoProvider,
             'gist': GistRepoProvider,
@@ -1049,4 +1060,15 @@ class ProxyRepoProvider(RepoProvider):
             'hydroshare': HydroshareProvider,
             'dataverse': DataverseProvider,
         }
-        return providers[provider], kwargs
+        # Potential API change: store repository spec as binder expects
+        # Potential API change: store ref (commit SHA)
+        if provider == "gh":
+            spec = "/".join(spec.split("/")[3:])
+        provider_class = providers[provider]
+        if not provider_class.labels["ref_prop_disabled"]:
+            spec += "/HEAD"
+        self.log.debug(f"Using {provider} provider with spec {spec}")
+        self.log.debug(f"Sending kwargs {kwargs}")
+        kwargs["spec"] = spec
+
+        return provider_class, kwargs

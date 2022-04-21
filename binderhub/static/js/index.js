@@ -77,6 +77,7 @@ function setLabels() {
   const tag_text = config_dict[provider]["tag_text"];
   const ref_prop_disabled = config_dict[provider]["ref_prop_disabled"];
   const label_prop_disabled = config_dict[provider]["label_prop_disabled"];
+  console.log(ref_prop_disabled)
   const placeholder = "HEAD";
 
   $("#ref").attr('placeholder', placeholder).prop("disabled", ref_prop_disabled);
